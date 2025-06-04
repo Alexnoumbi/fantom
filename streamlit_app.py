@@ -15,19 +15,19 @@ with st.expander("ℹ️ Instructions"):
 # Upload des fichiers
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader("Fichier Source (Noms + Numéros)")
+    st.subheader("Fichier Source (noms + numeros)")
     source_file = st.file_uploader("Choisir le fichier source", type=["csv"], key="source")
 
 with col2:
-    st.subheader("Fichier Cible (Numéros)")
+    st.subheader("Fichier Cible (numeros)")
     target_file = st.file_uploader("Choisir le fichier cible", type=["csv"], key="target")
 
 # Paramètres optionnels
 with st.sidebar:
     st.header("Options")
     source_noms_col = st.text_input("Nom colonne 'noms' dans source", "noms")
-    source_num_col = st.text_input("Nom colonne 'numéros' dans source", "numeros")
-    target_num_col = st.text_input("Nom colonne 'numéros' dans cible", "numeros")
+    source_num_col = st.text_input("Nom colonne 'numeros' dans source", "numeros")
+    target_num_col = st.text_input("Nom colonne 'numeros' dans cible", "numeros")
 
 if st.button("🔍 Effectuer l'appariement"):
     if not source_file or not target_file:
