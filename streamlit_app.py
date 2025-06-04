@@ -37,17 +37,18 @@ if st.button("🔍 Effectuer l'appariement"):
             # Lecture des fichiers
             df_source = pd.read_csv(source_file)
             df_target = pd.read_csv(target_file)
-            
+
+            # Nettoyage des noms de colonnes (suppression espaces)
+            df_source.columns = df_source.columns.str.strip()
+            df_target.columns = df_target.columns.str.strip()
+
             # Vérification des colonnes
             if source_noms_col not in df_source.columns:
                 st.error(f"Colonne '{source_noms_col}' introuvable dans le fichier source. Colonnes trouvées : {list(df_source.columns)}")
-            
             elif source_num_col not in df_source.columns:
                 st.error(f"Colonne '{source_num_col}' introuvable dans le fichier source. Colonnes trouvées : {list(df_source.columns)}")
-            
             elif target_num_col not in df_target.columns:
                 st.error(f"Colonne '{target_num_col}' introuvable dans le fichier cible. Colonnes trouvées : {list(df_target.columns)}")
-            
             else:
                 # Fusion des données
                 result = df_target.merge(
@@ -56,15 +57,15 @@ if st.button("🔍 Effectuer l'appariement"):
                     right_on=source_num_col,
                     how='left'
                 )
-                
+
                 # Affichage
                 st.success("Appariement réussi !")
-                
+
                 tab1, tab2 = st.tabs(["📊 Résultat", "📥 Télécharger"])
-                
+
                 with tab1:
                     st.dataframe(result, height=500)
-                
+
                 with tab2:
                     csv = result.to_csv(index=False).encode('utf-8')
                     st.download_button(
@@ -73,11 +74,10 @@ if st.button("🔍 Effectuer l'appariement"):
                         file_name="resultat_appariement.csv",
                         mime="text/csv"
                     )
-                
+
                 # Statistiques
                 matched = result[source_noms_col].notna().sum()
                 total = len(result)
                 st.info(f"**Statistiques :** {matched}/{total} correspondances trouvées ({matched/total:.1%})")
-        
         except Exception as e:
             st.error(f"Une erreur est survenue: {str(e)}")
