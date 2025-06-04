@@ -40,13 +40,13 @@ if st.button("🔍 Effectuer l'appariement"):
             
             # Vérification des colonnes
             if source_noms_col not in df_source.columns:
-                st.error(f"Colonne '{source_noms_col}' introuvable dans le fichier source")
+                st.error(f"Colonne '{source_noms_col}' introuvable dans le fichier source. Colonnes trouvées : {list(df_source.columns)}")
             
             elif source_num_col not in df_source.columns:
-                st.error(f"Colonne '{source_num_col}' introuvable dans le fichier source")
+                st.error(f"Colonne '{source_num_col}' introuvable dans le fichier source. Colonnes trouvées : {list(df_source.columns)}")
             
             elif target_num_col not in df_target.columns:
-                st.error(f"Colonne '{target_num_col}' introuvable dans le fichier cible")
+                st.error(f"Colonne '{target_num_col}' introuvable dans le fichier cible. Colonnes trouvées : {list(df_target.columns)}")
             
             else:
                 # Fusion des données
