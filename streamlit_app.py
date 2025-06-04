@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Appariement CSV", layout="wide")
-
 st.title("🔍 Appariement Noms/Numéros entre fichiers CSV")
 
 with st.expander("ℹ️ Instructions"):
@@ -10,95 +9,83 @@ with st.expander("ℹ️ Instructions"):
     1. **Fichier Source** : CSV contenant les colonnes `noms` et `numeros` (la référence complète)
     2. **Fichier Cible** : CSV contenant une colonne `numeros` à compléter avec les noms
     3. L'application fusionnera les données et affichera le résultat
+    4. Les numéros sans correspondance seront disponibles dans un espace séparé.
     """)
 
-# Upload des fichiers
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Fichier Source (noms + numeros)")
     source_file = st.file_uploader("Choisir le fichier source", type=["csv"], key="source")
-
 with col2:
     st.subheader("Fichier Cible (numeros)")
     target_file = st.file_uploader("Choisir le fichier cible", type=["csv"], key="target")
 
-# Paramètres optionnels
-with st.sidebar:
-    st.header("Options")
-    source_noms_col = st.text_input("Nom colonne 'noms' dans source", "noms")
-    source_num_col = st.text_input("Nom colonne 'numeros' dans source", "numeros")
-    target_num_col = st.text_input("Nom colonne 'numeros' dans cible", "numeros")
+def clean_and_merge(source_file, target_file):
+    df_source = pd.read_csv(source_file, dtype=str)
+    df_target = pd.read_csv(target_file, dtype=str)
+    df_source.columns = df_source.columns.str.strip()
+    df_target.columns = df_target.columns.str.strip()
 
-def safe_strip_columns(df):
-    """Supprime les espaces en début/fin dans les noms de colonnes."""
-    df.columns = df.columns.str.strip()
-    return df
+    # Sécurité sur les noms de colonnes
+    if not all(col in df_source.columns for col in ["noms", "numeros"]):
+        st.error(f"Le fichier source doit contenir les colonnes 'noms' et 'numeros'. Colonnes trouvées : {list(df_source.columns)}")
+        return None, None
+    if "numeros" not in df_target.columns:
+        st.error(f"Le fichier cible doit contenir la colonne 'numeros'. Colonnes trouvées : {list(df_target.columns)}")
+        return None, None
 
-def check_column(df, col_name, file_label):
-    if col_name not in df.columns:
-        st.error(f"Colonne '{col_name}' introuvable dans le fichier {file_label}. Colonnes trouvées : {list(df.columns)}")
-        return False
-    return True
+    # Nettoyage et préparation
+    df_source['numeros'] = df_source['numeros'].astype(str).str.strip()
+    df_source['noms'] = df_source['noms'].astype(str).str.strip()
+    df_target['numeros'] = df_target['numeros'].astype(str).str.strip()
 
-def normalize_column(df, col_name):
-    """Supprime les espaces et normalise en str pour la colonne de jointure."""
-    if col_name in df.columns:
-        df[col_name] = df[col_name].astype(str).str.strip()
-    return df
+    # Appariement
+    result = df_target.merge(df_source, on="numeros", how="left")
+
+    # Colonnes finales : conserver l'ordre cible puis noms
+    result = result[["numeros", "noms"] if "noms" in result.columns else ["numeros"]]
+
+    # Numéros sans noms associés
+    missing = result[result["noms"].isna()]
+
+    return result, missing
 
 if st.button("🔍 Effectuer l'appariement"):
     if not source_file or not target_file:
         st.error("Veuillez uploader les deux fichiers CSV.")
     else:
         try:
-            # Lecture des fichiers
-            df_source = pd.read_csv(source_file, dtype=str)
-            df_target = pd.read_csv(target_file, dtype=str)
+            result, missing = clean_and_merge(source_file, target_file)
+            if result is not None:
+                st.success("Appariement terminé !")
 
-            # Nettoyage des noms de colonnes
-            df_source = safe_strip_columns(df_source)
-            df_target = safe_strip_columns(df_target)
-
-            # Vérification des colonnes nécessaires
-            valid_source_noms = check_column(df_source, source_noms_col, "source")
-            valid_source_num = check_column(df_source, source_num_col, "source")
-            valid_target_num = check_column(df_target, target_num_col, "cible")
-
-            if valid_source_noms and valid_source_num and valid_target_num:
-                # Nettoyage des colonnes de jointure (suppression espaces)
-                df_source = normalize_column(df_source, source_num_col)
-                df_target = normalize_column(df_target, target_num_col)
-
-                # Fusion
-                result = df_target.merge(
-                    df_source[[source_num_col, source_noms_col]],
-                    left_on=target_num_col,
-                    right_on=source_num_col,
-                    how='left'
-                )
-
-                st.success("Appariement réussi !")
-
-                tab1, tab2 = st.tabs(["📊 Résultat", "📥 Télécharger"])
+                tab1, tab2 = st.tabs(["📊 Résultat complet", "📥 Numéros sans noms"])
 
                 with tab1:
                     st.dataframe(result, height=500)
-
-                with tab2:
-                    csv = result.to_csv(index=False).encode('utf-8')
+                    csv = result.to_csv(index=False).encode("utf-8")
                     st.download_button(
-                        label="💾 Télécharger le résultat",
+                        label="💾 Télécharger le résultat complet",
                         data=csv,
                         file_name="resultat_appariement.csv",
                         mime="text/csv"
                     )
+                    matched = result["noms"].notna().sum()
+                    total = len(result)
+                    percent = (matched / total * 100) if total else 0
+                    st.info(f"**Statistiques :** {matched}/{total} correspondances trouvées ({percent:.1f}%)")
 
-                # Statistiques
-                matched = result[source_noms_col].notna().sum()
-                total = len(result)
-                percent = (matched / total * 100) if total != 0 else 0
-                st.info(f"**Statistiques :** {matched}/{total} correspondances trouvées ({percent:.1f}%)")
-        except pd.errors.ParserError:
-            st.error("Erreur de lecture des fichiers CSV. Veuillez vérifier le format (séparateur, encodage, etc.).")
+                with tab2:
+                    if missing is not None and not missing.empty:
+                        st.dataframe(missing[["numeros"]], height=300)
+                        missing_csv = missing[["numeros"]].to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label="💾 Télécharger les numéros sans noms",
+                            data=missing_csv,
+                            file_name="numeros_sans_noms.csv",
+                            mime="text/csv"
+                        )
+                    else:
+                        st.success("Tous les numéros ont un nom associé !")
         except Exception as e:
             st.error(f"Une erreur est survenue : {str(e)}")
