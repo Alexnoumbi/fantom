@@ -210,3 +210,6 @@ if delete6_file:
 
 if standardize_file:
     standardize_phone_numbers(standardize_file)
+
+st.subheader("➕ Ajouter le '6' après 237")
+add6_file = st.file_uploader("Charger un fichier pour ajouter le '6' après 237 (colonne 'numeros')", type=["csv"], key="add6")
