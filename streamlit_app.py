@@ -105,6 +105,8 @@ if source_file and target_file:
                     file_name="contacts_avec_noms.csv",
                     mime="text/csv"
                 )
+            # Bloc pour les numéros sans noms uniquement
+            only_missing = result[result["noms"].isna()][["numeros"]]
             with st.expander("💾 Télécharger les numéros sans noms"):
                 if missing is not None and not missing.empty:
                     st.dataframe(missing[["numeros"]], height=200)
