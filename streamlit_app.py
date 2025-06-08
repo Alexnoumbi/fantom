@@ -133,9 +133,18 @@ def remove_six_after_237_indep(file):
         st.error("Le fichier doit contenir une colonne 'numeros'.")
         return
 
+    def clean_num(num):
+        # Enlève les éventuels ="..." ou "..." autour du numéro
+        num = str(num).strip()
+        if num.startswith('="') and num.endswith('"'):
+            num = num[2:-1]
+        elif num.startswith('"') and num.endswith('"'):
+            num = num[1:-1]
+        return num
+
     def remove_6(num):
-        num = num.strip()
-        if num.startswith("2376") and len(num) == 13:
+        num = clean_num(num)
+        if num.startswith("2376") and len(num) == 12:
             return "237" + num[4:]
         return num
 
