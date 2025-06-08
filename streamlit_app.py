@@ -41,8 +41,11 @@ def clean_and_merge(source_file, target_file):
 
     result = result[["numeros", "noms"] if "noms" in result.columns else ["numeros"]]
 
-    missing = result[result["noms"].isna()]
-    matched = result[result["noms"].notna()]
+    # Remplacer les valeurs None ou NaN par des chaînes vides pour un export propre
+    result = result.fillna("")
+
+    missing = result[result["noms"] == ""]
+    matched = result[result["noms"] != ""]
 
     return matched, missing
 
