@@ -25,8 +25,12 @@ with col2:
 st.subheader("📦 Corriger les numéros mal formés")
 correction_file = st.file_uploader("Charger un fichier à corriger (colonne 'numeros')", type=["csv"], key="correction")
 
-st.subheader("🧹 Supprimer les '6' en trop après 237")
-delete6_file = st.file_uploader("Charger un fichier pour supprimer le '6' après 237 (colonne 'numeros')", type=["csv"], key="delete6")
+st.subheader("🧽 Supprimer le '6' après 237 (indépendant)")
+remove6_file = st.file_uploader(
+    "Charger un fichier pour supprimer le '6' après 237 (colonne 'numeros')", 
+    type=["csv"], 
+    key="remove6_indep"
+)
 
 st.subheader("🔄 Standardiser les numéros (ajouter ou retirer le '6' après 237)")
 standardize_file = st.file_uploader(
@@ -209,8 +213,8 @@ if st.button("🔍 Effectuer l'appariement"):
 if correction_file:
     correct_phone_numbers(correction_file)
 
-if delete6_file:
-    remove_six_after_237(delete6_file)
+if remove6_file:
+    remove_six_after_237_indep(remove6_file)
 
 if standardize_file:
     standardize_phone_numbers(standardize_file)
