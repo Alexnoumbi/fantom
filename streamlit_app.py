@@ -21,8 +21,8 @@ with col2:
     target_file = st.file_uploader("Choisir le fichier cible", type=["csv"], key="target")
 
 def clean_and_merge(source_file, target_file):
-    df_source = pd.read_csv(source_file, dtype=str)
-    df_target = pd.read_csv(target_file, dtype=str)
+    df_source = pd.read_csv(source_file, dtype=str).fillna("")
+    df_target = pd.read_csv(target_file, dtype=str).fillna("")
     df_source.columns = df_source.columns.str.strip()
     df_target.columns = df_target.columns.str.strip()
 
@@ -43,6 +43,9 @@ def clean_and_merge(source_file, target_file):
 
     # Remplacer les valeurs None ou NaN par des chaînes vides pour un export propre
     result = result.fillna("")
+
+    # Préserver les numéros pour affichage correct dans Excel (format texte)
+    result['numeros'] = result['numeros'].apply(lambda x: f'="{x}"')
 
     missing = result[result["noms"] == ""]
     matched = result[result["noms"] != ""]
