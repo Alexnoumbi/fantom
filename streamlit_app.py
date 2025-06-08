@@ -11,6 +11,7 @@ with st.expander("ℹ️ Instructions"):
     3. L'application fusionnera les données et affichera le résultat
     4. Les numéros sans correspondance seront disponibles dans un espace séparé.
     5. Vous pouvez également charger un fichier pour corriger les numéros qui n'ont pas un format commençant par `2376`
+    6. Vous pouvez aussi supprimer les "6" ajoutés ou standardiser les numéros à 9 chiffres après "237"
     """)
 
 col1, col2 = st.columns(2)
@@ -24,6 +25,9 @@ with col2:
 st.subheader("📦 Corriger les numéros mal formés")
 correction_file = st.file_uploader("Charger un fichier à corriger (colonne 'numeros')", type=["csv"], key="correction")
 
+st.subheader("🧹 Supprimer les '6' en trop après 237")
+delete6_file = st.file_uploader("Charger un fichier pour supprimer le '6' après 237 (colonne 'numeros')", type=["csv"], key="delete6")
+
 def correct_phone_numbers(file):
     df = pd.read_csv(file, dtype=str).fillna("")
     df.columns = df.columns.str.strip()
@@ -34,18 +38,14 @@ def correct_phone_numbers(file):
     def format_number(num):
         num = num.strip()
         if not num.startswith("237"):
-            return num  # Ignore ceux qui ne commencent pas par 237
-
-        if num.startswith("2376"):
-            return num  # Déjà au bon format
+            return num
 
         rest = num[3:]
 
-        # Si rest contient 8 chiffres, on ajoute un 6
+        if num.startswith("2376"):
+            return num
         if len(rest) == 8 and rest.isdigit():
             return "2376" + rest
-
-        # Sinon on suppose que le 6 est manquant
         return "2376" + rest
 
     df["numeros"] = df["numeros"].apply(format_number)
@@ -55,6 +55,27 @@ def correct_phone_numbers(file):
     st.dataframe(df, height=300)
     corrected_csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("💾 Télécharger le fichier corrigé", corrected_csv, file_name="numeros_corriges.csv", mime="text/csv")
+
+def remove_six_after_237(file):
+    df = pd.read_csv(file, dtype=str).fillna("")
+    df.columns = df.columns.str.strip()
+    if "numeros" not in df.columns:
+        st.error("Le fichier doit contenir une colonne 'numeros'.")
+        return
+
+    def remove_6(num):
+        num = num.strip()
+        if num.startswith("2376") and len(num) == 13:
+            return "237" + num[4:]
+        return num
+
+    df["numeros"] = df["numeros"].apply(remove_6)
+    df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
+
+    st.success("Suppression du '6' effectuée avec succès !")
+    st.dataframe(df, height=300)
+    cleaned_csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("💾 Télécharger le fichier nettoyé", cleaned_csv, file_name="numeros_nettoyes.csv", mime="text/csv")
 
 def clean_and_merge(source_file, target_file):
     df_source = pd.read_csv(source_file, dtype=str).fillna("")
@@ -123,3 +144,6 @@ if st.button("🔍 Effectuer l'appariement"):
 
 if correction_file:
     correct_phone_numbers(correction_file)
+
+if delete6_file:
+    remove_six_after_237(delete6_file)
