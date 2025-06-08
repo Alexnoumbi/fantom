@@ -89,3 +89,33 @@ if st.button("🔍 Effectuer l'appariement"):
                         st.success("Tous les numéros ont un nom associé !")
         except Exception as e:
             st.error(f"Une erreur est survenue : {str(e)}")
+
+# Nouveau bloc : affichage direct après upload
+if source_file and target_file:
+    try:
+        result, missing = clean_and_merge(source_file, target_file)
+        if result is not None:
+            with st.expander("💾 Télécharger les contacts avec noms"):
+                with_names = result[result["noms"].notna()]
+                st.dataframe(with_names, height=300)
+                csv_with_names = with_names.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="Télécharger les contacts avec noms",
+                    data=csv_with_names,
+                    file_name="contacts_avec_noms.csv",
+                    mime="text/csv"
+                )
+            with st.expander("💾 Télécharger les numéros sans noms"):
+                if missing is not None and not missing.empty:
+                    st.dataframe(missing[["numeros"]], height=200)
+                    missing_csv = missing[["numeros"]].to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label="Télécharger les numéros sans noms",
+                        data=missing_csv,
+                        file_name="numeros_sans_noms.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.success("Tous les numéros ont un nom associé !")
+    except Exception as e:
+        st.error(f"Erreur lors du traitement : {str(e)}")
