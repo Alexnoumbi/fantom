@@ -213,3 +213,42 @@ if standardize_file:
 
 st.subheader("➕ Ajouter le '6' après 237")
 add6_file = st.file_uploader("Charger un fichier pour ajouter le '6' après 237 (colonne 'numeros')", type=["csv"], key="add6")
+
+def add_six_after_237(file):
+    df = pd.read_csv(file, dtype=str).fillna("")
+    df.columns = df.columns.str.strip()
+    if "numeros" not in df.columns:
+        st.error("Le fichier doit contenir une colonne 'numeros'.")
+        return
+
+    def clean_num(num):
+        num = str(num).strip()
+        if num.startswith('="') and num.endswith('"'):
+            num = num[2:-1]
+        elif num.startswith('"') and num.endswith('"'):
+            num = num[1:-1]
+        return num
+
+    def add_6(num):
+        num = clean_num(num)
+        # Ajoute le 6 si le numéro commence par 237, n'a pas déjà le 6, et a 12 caractères (format normal sans le 6)
+        if num.startswith("237") and not num.startswith("2376") and len(num) == 12:
+            return "2376" + num[3:]
+        return num
+
+    df["numeros"] = df["numeros"].apply(add_6)
+    df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
+
+    st.success("Ajout du '6' effectué avec succès !")
+    st.dataframe(df, height=300)
+    added_csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "💾 Télécharger le fichier avec '6' ajouté", 
+        added_csv, 
+        file_name="numeros_avec_6_apres_237.csv", 
+        mime="text/csv"
+    )
+
+# Ajout de l'appel dans l'interface
+if add6_file:
+    add_six_after_237(add6_file)
