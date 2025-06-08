@@ -84,6 +84,32 @@ def remove_six_after_237(file):
     cleaned_csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("💾 Télécharger le fichier nettoyé", cleaned_csv, file_name="numeros_nettoyes.csv", mime="text/csv")
 
+def remove_six_after_237_indep(file):
+    df = pd.read_csv(file, dtype=str).fillna("")
+    df.columns = df.columns.str.strip()
+    if "numeros" not in df.columns:
+        st.error("Le fichier doit contenir une colonne 'numeros'.")
+        return
+
+    def remove_6(num):
+        num = num.strip()
+        if num.startswith("2376") and len(num) == 13:
+            return "237" + num[4:]
+        return num
+
+    df["numeros"] = df["numeros"].apply(remove_6)
+    df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
+
+    st.success("Suppression du '6' effectuée avec succès !")
+    st.dataframe(df, height=300)
+    cleaned_csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "💾 Télécharger le fichier sans '6' après 237", 
+        cleaned_csv, 
+        file_name="numeros_sans_6_apres_237.csv", 
+        mime="text/csv"
+    )
+
 def standardize_phone_numbers(file):
     df = pd.read_csv(file, dtype=str).fillna("")
     df.columns = df.columns.str.strip()
