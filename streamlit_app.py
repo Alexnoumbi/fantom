@@ -168,8 +168,17 @@ def add_six_after_237_indep(file):
         st.error("Le fichier doit contenir une colonne 'numeros'.")
         return
 
+    def clean_num(num):
+        num = str(num).strip()
+        if num.startswith('="') and num.endswith('"'):
+            num = num[2:-1]
+        elif num.startswith('"') and num.endswith('"'):
+            num = num[1:-1]
+        return num
+
     def add_6(num):
-        num = num.strip()
+        num = clean_num(num)
+        # Ajoute le 6 si le numéro commence par 237, n'a pas déjà le 6, et a 11 chiffres après 237
         if num.startswith("237") and not num.startswith("2376") and len(num) == 12:
             return "2376" + num[3:]
         return num
