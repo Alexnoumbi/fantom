@@ -26,7 +26,6 @@ def clean_and_merge(source_file, target_file):
     df_source.columns = df_source.columns.str.strip()
     df_target.columns = df_target.columns.str.strip()
 
-    # Sécurité sur les noms de colonnes
     if not all(col in df_source.columns for col in ["noms", "numeros"]):
         st.error(f"Le fichier source doit contenir les colonnes 'noms' et 'numeros'. Colonnes trouvées : {list(df_source.columns)}")
         return None, None
@@ -34,46 +33,40 @@ def clean_and_merge(source_file, target_file):
         st.error(f"Le fichier cible doit contenir la colonne 'numeros'. Colonnes trouvées : {list(df_target.columns)}")
         return None, None
 
-    # Nettoyage et préparation
     df_source['numeros'] = df_source['numeros'].astype(str).str.strip()
     df_source['noms'] = df_source['noms'].astype(str).str.strip()
     df_target['numeros'] = df_target['numeros'].astype(str).str.strip()
 
-    # Appariement
     result = df_target.merge(df_source, on="numeros", how="left")
 
-    # Colonnes finales : conserver l'ordre cible puis noms
     result = result[["numeros", "noms"] if "noms" in result.columns else ["numeros"]]
 
-    # Numéros sans noms associés
     missing = result[result["noms"].isna()]
+    matched = result[result["noms"].notna()]
 
-    return result, missing
+    return matched, missing
 
 if st.button("🔍 Effectuer l'appariement"):
     if not source_file or not target_file:
         st.error("Veuillez uploader les deux fichiers CSV.")
     else:
         try:
-            result, missing = clean_and_merge(source_file, target_file)
-            if result is not None:
+            matched, missing = clean_and_merge(source_file, target_file)
+            if matched is not None:
                 st.success("Appariement terminé !")
 
-                tab1, tab2 = st.tabs(["📊 Résultat complet", "📥 Numéros sans noms"])
+                tab1, tab2 = st.tabs(["✅ Numéros avec noms", "❌ Numéros sans noms"])
 
                 with tab1:
-                    st.dataframe(result, height=500)
-                    csv = result.to_csv(index=False).encode("utf-8")
+                    st.dataframe(matched, height=500)
+                    csv = matched.to_csv(index=False).encode("utf-8")
                     st.download_button(
-                        label="💾 Télécharger le résultat complet",
+                        label="💾 Télécharger les numéros avec noms",
                         data=csv,
-                        file_name="resultat_appariement.csv",
+                        file_name="numeros_avec_noms.csv",
                         mime="text/csv"
                     )
-                    matched = result["noms"].notna().sum()
-                    total = len(result)
-                    percent = (matched / total * 100) if total else 0
-                    st.info(f"**Statistiques :** {matched}/{total} correspondances trouvées ({percent:.1f}%)")
+                    st.info(f"**Statistiques :** {len(matched)} correspondances trouvées")
 
                 with tab2:
                     if missing is not None and not missing.empty:
