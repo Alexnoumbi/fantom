@@ -33,11 +33,20 @@ def correct_phone_numbers(file):
 
     def format_number(num):
         num = num.strip()
+        if not num.startswith("237"):
+            return num  # Ignore ceux qui ne commencent pas par 237
+
         if num.startswith("2376"):
-            return num  # correct
-        elif num.startswith("237"):
-            return "2376" + num[3:]
-        return num  # fallback
+            return num  # Déjà au bon format
+
+        rest = num[3:]
+
+        # Si rest contient 8 chiffres, on ajoute un 6
+        if len(rest) == 8 and rest.isdigit():
+            return "2376" + rest
+
+        # Sinon on suppose que le 6 est manquant
+        return "2376" + rest
 
     df["numeros"] = df["numeros"].apply(format_number)
     df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
