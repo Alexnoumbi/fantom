@@ -22,6 +22,44 @@ with col2:
     st.subheader("Fichier Cible (numeros)")
     target_file = st.file_uploader("Choisir le fichier cible", type=["csv"], key="target")
 
+# Déplace le bouton juste après le bloc d'appariement
+if st.button("🔍 Effectuer l'appariement"):
+    if not source_file or not target_file:
+        st.error("Veuillez uploader les deux fichiers CSV.")
+    else:
+        try:
+            matched, missing = clean_and_merge(source_file, target_file)
+            if matched is not None:
+                st.success("Appariement terminé !")
+
+                tab1, tab2 = st.tabs(["✅ Numéros avec noms", "❌ Numéros sans noms"])
+
+                with tab1:
+                    st.dataframe(matched, height=500)
+                    csv = matched.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label="💾 Télécharger les numéros avec noms",
+                        data=csv,
+                        file_name="numeros_avec_noms.csv",
+                        mime="text/csv"
+                    )
+                    st.info(f"**Statistiques :** {len(matched)} correspondances trouvées")
+
+                with tab2:
+                    if missing is not None and not missing.empty:
+                        st.dataframe(missing[["numeros"]], height=300)
+                        missing_csv = missing[["numeros"]].to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label="💾 Télécharger les numéros sans noms",
+                            data=missing_csv,
+                            file_name="numeros_sans_noms.csv",
+                            mime="text/csv"
+                        )
+                    else:
+                        st.success("Tous les numéros ont un nom associé !")
+        except Exception as e:
+            st.error(f"Une erreur est survenue : {str(e)}")
+
 st.subheader("📦 Corriger les numéros mal formés")
 correction_file = st.file_uploader("Charger un fichier à corriger (colonne 'numeros')", type=["csv"], key="correction")
 
@@ -30,6 +68,13 @@ remove6_file = st.file_uploader(
     "Charger un fichier pour supprimer le '6' après 237 (colonne 'numeros')", 
     type=["csv"], 
     key="remove6_indep"
+)
+
+st.subheader("➕ Ajouter le '6' après 237 (indépendant)")
+add6_file = st.file_uploader(
+    "Charger un fichier pour ajouter le '6' après 237 (colonne 'numeros')", 
+    type=["csv"], 
+    key="add6_indep"
 )
 
 st.subheader("🔄 Standardiser les numéros (ajouter ou retirer le '6' après 237)")
@@ -111,6 +156,32 @@ def remove_six_after_237_indep(file):
         "💾 Télécharger le fichier sans '6' après 237", 
         cleaned_csv, 
         file_name="numeros_sans_6_apres_237.csv", 
+        mime="text/csv"
+    )
+
+def add_six_after_237_indep(file):
+    df = pd.read_csv(file, dtype=str).fillna("")
+    df.columns = df.columns.str.strip()
+    if "numeros" not in df.columns:
+        st.error("Le fichier doit contenir une colonne 'numeros'.")
+        return
+
+    def add_6(num):
+        num = num.strip()
+        if num.startswith("237") and not num.startswith("2376") and len(num) == 12:
+            return "2376" + num[3:]
+        return num
+
+    df["numeros"] = df["numeros"].apply(add_6)
+    df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
+
+    st.success("Ajout du '6' effectué avec succès !")
+    st.dataframe(df, height=300)
+    added_csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "💾 Télécharger le fichier avec '6' ajouté", 
+        added_csv, 
+        file_name="numeros_avec_6_apres_237.csv", 
         mime="text/csv"
     )
 
@@ -215,6 +286,9 @@ if correction_file:
 
 if remove6_file:
     remove_six_after_237_indep(remove6_file)
+
+if add6_file:
+    add_six_after_237_indep(add6_file)
 
 if standardize_file:
     standardize_phone_numbers(standardize_file)
