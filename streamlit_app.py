@@ -28,6 +28,13 @@ correction_file = st.file_uploader("Charger un fichier à corriger (colonne 'num
 st.subheader("🧹 Supprimer les '6' en trop après 237")
 delete6_file = st.file_uploader("Charger un fichier pour supprimer le '6' après 237 (colonne 'numeros')", type=["csv"], key="delete6")
 
+st.subheader("🔄 Standardiser les numéros (ajouter ou retirer le '6' après 237)")
+standardize_file = st.file_uploader(
+    "Charger un fichier à standardiser (colonne 'numeros')", 
+    type=["csv"], 
+    key="standardize"
+)
+
 def correct_phone_numbers(file):
     df = pd.read_csv(file, dtype=str).fillna("")
     df.columns = df.columns.str.strip()
@@ -76,6 +83,37 @@ def remove_six_after_237(file):
     st.dataframe(df, height=300)
     cleaned_csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("💾 Télécharger le fichier nettoyé", cleaned_csv, file_name="numeros_nettoyes.csv", mime="text/csv")
+
+def standardize_phone_numbers(file):
+    df = pd.read_csv(file, dtype=str).fillna("")
+    df.columns = df.columns.str.strip()
+    if "numeros" not in df.columns:
+        st.error("Le fichier doit contenir une colonne 'numeros'.")
+        return
+
+    def standardize(num):
+        num = num.strip()
+        if num.startswith("2376"):
+            # Retirer le '6' après '237'
+            return "237" + num[4:]
+        elif num.startswith("237"):
+            # Ajouter un '6' après '237' si ce n'est pas déjà le cas
+            if len(num) == 12 and num[3] != "6":
+                return "2376" + num[3:]
+        return num
+
+    df["numeros"] = df["numeros"].apply(standardize)
+    df['numeros'] = df['numeros'].apply(lambda x: f'="{x}"')
+
+    st.success("Numéros standardisés avec succès !")
+    st.dataframe(df, height=300)
+    standardized_csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "💾 Télécharger le fichier standardisé", 
+        standardized_csv, 
+        file_name="numeros_standardises.csv", 
+        mime="text/csv"
+    )
 
 def clean_and_merge(source_file, target_file):
     df_source = pd.read_csv(source_file, dtype=str).fillna("")
@@ -147,3 +185,6 @@ if correction_file:
 
 if delete6_file:
     remove_six_after_237(delete6_file)
+
+if standardize_file:
+    standardize_phone_numbers(standardize_file)
