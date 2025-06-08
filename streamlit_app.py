@@ -232,7 +232,7 @@ def add_six_after_237(file):
     def add_6(num):
         num = clean_num(num)
         # Ajoute le 6 si le numéro commence par 237, n'a pas déjà le 6, et a 12 caractères (format normal sans le 6)
-        if num.startswith("237") and not num.startswith("2376") and len(num) == 12:
+        if num.startswith("237") and not num.startswith("2376") and len(num) == 11:
             return "2376" + num[3:]
         return num
 
